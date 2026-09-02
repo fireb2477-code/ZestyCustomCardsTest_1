@@ -1,11 +1,11 @@
 -- Robin - The Star Rail Summeretto
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Xyz Summon standard procedure: 2 Level 12 monsters
+    -- Xyz Summon standard procedure: 2 Level 12 "Genshin"/"Halovian"/"Star Rail" monsters
     c:EnableReviveLimit()
     Xyz.AddProcedure(c,s.xyzfilter,12,2)
 
-    -- Alternative Xyz Summon procedure: 3 "Halovian" on field + 2 "Halovian" in hand
+    -- Alternative Xyz Summon procedure: 3 "Halovian"/"Genshin" on field + 2 "Halovian"/"Genshin"/"Star Rail" in hand
     local e0=Effect.CreateEffect(c)
     e0:SetDescription(aux.Stringid(id,0))
     e0:SetType(EFFECT_TYPE_FIELD)
@@ -77,28 +77,39 @@ function s.initial_effect(c)
     c:RegisterEffect(e8)
 end
 
-s.listed_series={0x987}
+s.listed_series={0x987,0x369,0x986}
+
+-- Hàm kiểm tra lá bài thuộc 1 trong 3 Archetype
+function s.is_archetype(c)
+    return c:IsSetCard(0x987) or c:IsSetCard(0x369) or c:IsSetCard(0x986)
+end
 
 -- Standard Xyz Material Filter
 function s.xyzfilter(c,xyz,sumtype,tp)
-    return c:IsSetCard(0x987)
+    return s.is_archetype(c)
 end
 
 -- Alternative Xyz Summon Logic
-function s.altmfilter(c)
-    return c:IsSetCard(0x987) and c:IsCanBeXyzMaterial(nil)
-        and (not c:IsOnField() or c:IsFaceup())
+-- Field: 3 "Halovian" hoặc "Genshin" monsters
+function s.altmfilter_field(c)
+    return (c:IsSetCard(0x987) or c:IsSetCard(0x369)) and c:IsCanBeXyzMaterial(nil) and c:IsFaceup()
 end
+-- Hand: 2 "Halovian", "Genshin", hoặc "Star Rail" cards
+function s.altmfilter_hand(c)
+    return s.is_archetype(c) and c:IsCanBeXyzMaterial(nil)
+end
+
 function s.altxyzcon(e,c,og,min,max)
     if c==nil then return true end
     local tp=c:GetControler()
-    local mg_field=Duel.GetMatchingGroup(s.altmfilter,tp,LOCATION_MZONE,0,nil)
-    local mg_hand=Duel.GetMatchingGroup(s.altmfilter,tp,LOCATION_HAND,0,nil)
+    local mg_field=Duel.GetMatchingGroup(s.altmfilter_field,tp,LOCATION_MZONE,0,nil)
+    local mg_hand=Duel.GetMatchingGroup(s.altmfilter_hand,tp,LOCATION_HAND,0,nil)
     return #mg_field>=3 and #mg_hand>=2 and Duel.GetLocationCountFromEx(tp,tp,mg_field,c)>0
 end
+
 function s.altxyztg(e,tp,eg,ep,ev,re,r,rp,chk,c,og,min,max)
-    local mg_field=Duel.GetMatchingGroup(s.altmfilter,tp,LOCATION_MZONE,0,nil)
-    local mg_hand=Duel.GetMatchingGroup(s.altmfilter,tp,LOCATION_HAND,0,nil)
+    local mg_field=Duel.GetMatchingGroup(s.altmfilter_field,tp,LOCATION_MZONE,0,nil)
+    local mg_hand=Duel.GetMatchingGroup(s.altmfilter_hand,tp,LOCATION_HAND,0,nil)
     if #mg_field<3 or #mg_hand<2 then return false end
 
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
@@ -110,6 +121,7 @@ function s.altxyztg(e,tp,eg,ep,ev,re,r,rp,chk,c,og,min,max)
     e:SetLabelObject(sg1)
     return true
 end
+
 function s.altxyzop(e,tp,eg,ep,ev,re,r,rp,c,og,min,max)
     local g=e:GetLabelObject()
     if not g then return end
@@ -127,12 +139,14 @@ end
 function s.sumfilter(c,e,tp)
     return c:IsSetCard(0x987) and c:IsLevel(1) and c:IsRace(RACE_WINGEDBEAST) and c:IsAttack(0)
 end
+
 function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         local g=Duel.GetMatchingGroup(s.sumfilter,tp,LOCATION_DECK+LOCATION_HAND+LOCATION_GRAVE+LOCATION_REMOVED,0,nil,e,tp)
         return #g>=3
     end
 end
+
 function s.sumop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.sumfilter),tp,LOCATION_DECK+LOCATION_HAND+LOCATION_GRAVE+LOCATION_REMOVED,0,nil,e,tp)
     if #g<3 then return end
@@ -161,7 +175,7 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 
-    -- Restriction: Only Special Summon Halovian monsters for rest of duel
+    -- Restriction: Chỉ được Gọi đặc biệt quái thú Genshin (0x369), Star Rail (0x986), và Halovian (0x987) trong phần còn lại của trận đấu
     local e1=Effect.CreateEffect(e:GetHandler())
     e1:SetType(EFFECT_TYPE_FIELD)
     e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
@@ -171,20 +185,23 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
     e1:SetTarget(s.splimit)
     Duel.RegisterEffect(e1,tp)
 end
+
 function s.splimit(e,c,sump,sumtype,sumpos,target_tp,se)
-    return not c:IsSetCard(0x987)
+    return not s.is_archetype(c)
 end
 
 -- Quick Effect Logic
 function s.effcon(e,tp,eg,ep,ev,re,r,rp)
     return rp==1-tp
 end
+
 function s.costfilter1(c)
     return c:IsSetCard(0x987) and c:IsMonster() and c:IsDiscardable()
 end
 function s.costfilter2(c)
     return c:IsSetCard(0x987) and c:IsMonster() and c:IsAbleToGraveAsCost()
 end
+
 function s.effcost(e,tp,eg,ep,ev,re,r,rp,chk)
     local b1=Duel.IsExistingMatchingCard(s.costfilter1,tp,LOCATION_HAND,0,1,nil)
     local b2=Duel.IsExistingMatchingCard(s.costfilter2,tp,LOCATION_MZONE,0,1,e:GetHandler())
@@ -207,9 +224,11 @@ function s.effcost(e,tp,eg,ep,ev,re,r,rp,chk)
         Duel.SendtoGrave(g,REASON_COST)
     end
 end
+
 function s.spfilter2(c,e,tp)
     return c:IsSetCard(0x987) and c:IsMonster() and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
+
 function s.efftg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
 
@@ -250,6 +269,7 @@ function s.efftg(e,tp,eg,ep,ev,re,r,rp,chk)
         Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED)
     end
 end
+
 function s.effop(e,tp,eg,ep,ev,re,r,rp)
     local sel=e:GetLabel()
     if sel==0 then
@@ -304,6 +324,7 @@ function s.effop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
     local tc=e:GetLabelObject()
     if tc then

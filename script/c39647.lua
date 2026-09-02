@@ -1,329 +1,191 @@
---Robin - The Star Rail Summeretto
+--Robin - The Star Rail Sumeretto
+--Custom Card
 local s,id=GetID()
 
 s.listed_series={0x987,0x986,0x369}
 
 function s.initial_effect(c)
-	--------------------------------------------------
-	-- Xyz Summon
-	-- 2 Level 12 "Genshin"/"Halovian"/"Star Rail" monsters
-	--------------------------------------------------
 	c:EnableReviveLimit()
-	aux.AddXyzProcedure(c,s.matfilter,12,2)
 
-	--------------------------------------------------
-	-- Alternative Xyz Summon
-	-- 3 "Halovian"/"Genshin" monsters you control
-	-- + 2 "Halovian"/"Genshin"/"Star Rail" monsters
-	-- in your hand
-	--------------------------------------------------
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_FIELD)
-	e0:SetCode(EFFECT_SPSUMMON_PROC)
-	e0:SetProperty(EFFECT_FLAG_UNCOPYABLE)
-	e0:SetRange(LOCATION_EXTRA)
-	e0:SetCondition(s.altcon)
-	e0:SetTarget(s.alttg)
-	e0:SetOperation(s.altop)
-	c:RegisterEffect(e0)
+	-- Xyz Summon: 2 Level 12 Genshin / Halovian / Star Rail monsters
+	Xyz.AddProcedure(c,s.xyzfilter,12,2)
 
-	--------------------------------------------------
-	-- Cannot be destroyed, Tributed, banished,
-	-- or sent to GY by opponent's effects.
-	-- Also cannot be targeted by card effects.
-	--------------------------------------------------
+	-- Alternative Xyz Summon:
+	-- 3 Halovian/Genshin monsters on the field
+	-- + 2 Halovian/Genshin/Star Rail monsters in the hand
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
-	e1:SetValue(s.indes)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e1:SetRange(LOCATION_EXTRA)
+	e1:SetCountLimit(1,id)
+	e1:SetCondition(s.altcon)
+	e1:SetTarget(s.alttg)
+	e1:SetOperation(s.altop)
 	c:RegisterEffect(e1)
 
+	-- Cannot be destroyed / Tributed / banished / sent to GY by opponent
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetCode(EFFECT_UNRELEASABLE_EFFECT)
 	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetValue(1)
+	e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+	e2:SetValue(s.indval)
 	c:RegisterEffect(e2)
 
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE)
 	e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetCode(EFFECT_CANNOT_REMOVE)
-	e3:SetValue(s.rmlimit)
+	e3:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+	e3:SetValue(aux.tgoval)
 	c:RegisterEffect(e3)
 
+	-- Summon 3 Level 1 Halovian Winged-Beast monsters
 	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_SINGLE)
-	e4:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+	e4:SetDescription(aux.Stringid(id,0))
+	e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
+	e4:SetType(EFFECT_TYPE_TRIGGER_O)
+	e4:SetCode(EVENT_SUMMON_SUCCESS)
+	e4:SetProperty(EFFECT_FLAG_DELAY)
+	e4:SetCountLimit(1,id+1)
 	e4:SetRange(LOCATION_MZONE)
-	e4:SetCode(EFFECT_CANNOT_TO_GRAVE)
-	e4:SetValue(s.tglimit)
+	e4:SetTarget(s.sumtg)
+	e4:SetOperation(s.sumop)
 	c:RegisterEffect(e4)
 
-	local e5=Effect.CreateEffect(c)
-	e5:SetType(EFFECT_TYPE_SINGLE)
-	e5:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e5:SetRange(LOCATION_MZONE)
-	e5:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
-	e5:SetValue(aux.tgoval)
+	local e5=e4:Clone()
+	e5:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e5)
 
-	--------------------------------------------------
-	-- On Normal/Special Summon:
-	-- Special Summon 3 Level 1 Halovian Winged Beast
-	-- monsters with 0 ATK
-	-- OR add them to hand instead.
-	--
-	-- After this effect resolves, for the rest of
-	-- the Duel, you can only Special Summon
-	-- Genshin / Star Rail / Halovian monsters.
-	--------------------------------------------------
-	local e6=Effect.CreateEffect(c)
-	e6:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
-	e6:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e6:SetCode(EVENT_SUMMON_SUCCESS)
-	e6:SetProperty(EFFECT_FLAG_DELAY)
-	e6:SetCountLimit(1,id)
-	e6:SetTarget(s.sptg)
-	e6:SetOperation(s.spop)
-	c:RegisterEffect(e6)
-
-	local e7=e6:Clone()
-	e7:SetCode(EVENT_SPSUMMON_SUCCESS)
-	c:RegisterEffect(e7)
-
-	--------------------------------------------------
 	-- Quick Effect
-	--------------------------------------------------
-	local e8=Effect.CreateEffect(c)
-	e8:SetCategory(
-		CATEGORY_DESTROY+
-		CATEGORY_NEGATE+
-		CATEGORY_REMOVE+
-		CATEGORY_SPECIAL_SUMMON
-	)
-	e8:SetType(EFFECT_TYPE_QUICK_O)
-	e8:SetCode(EVENT_CHAINING)
-	e8:SetRange(LOCATION_MZONE)
-	e8:SetCountLimit(1,id+100)
-	e8:SetCondition(s.qcon)
-	e8:SetCost(s.qcost)
-	e8:SetTarget(s.qtg)
-	e8:SetOperation(s.qop)
-	c:RegisterEffect(e8)
+	local e6=Effect.CreateEffect(c)
+	e6:SetDescription(aux.Stringid(id,1))
+	e6:SetCategory(CATEGORY_DESTROY+CATEGORY_NEGATE+CATEGORY_REMOVE+CATEGORY_SPECIAL_SUMMON)
+	e6:SetType(EFFECT_TYPE_QUICK_O)
+	e6:SetCode(EVENT_CHAINING)
+	e6:SetRange(LOCATION_MZONE)
+	e6:SetCountLimit(1,id+2)
+	e6:SetCondition(s.qcon)
+	e6:SetTarget(s.qtg)
+	e6:SetOperation(s.qop)
+	c:RegisterEffect(e6)
 end
 
-
 --------------------------------------------------
--- Normal Xyz materials
+-- Xyz materials
 --------------------------------------------------
 
-function s.matfilter(c,xyzc)
+function s.xyzfilter(c)
 	return c:IsLevel(12)
-		and (
-			c:IsSetCard(0x987)
+		and (c:IsSetCard(0x987)
 			or c:IsSetCard(0x986)
-			or c:IsSetCard(0x369)
-		)
+			or c:IsSetCard(0x369))
 end
 
-
 --------------------------------------------------
--- Alternative Xyz material filters
+-- Alternative Xyz Summon
 --------------------------------------------------
 
--- The 3 monsters that must be on the field.
-function s.fieldfilter(c)
-	return c:IsFaceup()
-		and (
-			c:IsSetCard(0x987)
-			or c:IsSetCard(0x369)
-		)
+function s.altcon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetLocationCountFromEx(tp)>0
+		and Duel.IsExistingMatchingCard(s.fieldmat,tp,LOCATION_MZONE,0,3,nil)
+		and Duel.IsExistingMatchingCard(s.handmat,tp,LOCATION_HAND,0,2,nil)
 end
-
--- The 2 monsters that must be in the hand.
-function s.handfilter(c)
-	return (
-		c:IsSetCard(0x987)
-		or c:IsSetCard(0x986)
-		or c:IsSetCard(0x369)
-	)
-end
-
-
---------------------------------------------------
--- Alternative Xyz Summon condition
---------------------------------------------------
-
-function s.altcon(e,c)
-	if c==nil then
-		return true
-	end
-
-	if not c:IsLocation(LOCATION_EXTRA) then
-		return false
-	end
-
-	local tp=e:GetHandlerPlayer()
-
-	local fg=Duel.GetMatchingGroup(
-		s.fieldfilter,
-		tp,
-		LOCATION_MZONE,
-		0,
-		nil
-	)
-
-	local hg=Duel.GetMatchingGroup(
-		s.handfilter,
-		tp,
-		LOCATION_HAND,
-		0,
-		nil
-	)
-
-	return #fg>=3 and #hg>=2
-end
-
 
 function s.alttg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		local fg=Duel.GetMatchingGroup(
-			s.fieldfilter,
-			tp,
-			LOCATION_MZONE,
-			0,
-			nil
-		)
-
-		local hg=Duel.GetMatchingGroup(
-			s.handfilter,
-			tp,
-			LOCATION_HAND,
-			0,
-			nil
-		)
-
-		return #fg>=3 and #hg>=2
+		return Duel.IsExistingMatchingCard(s.fieldmat,tp,LOCATION_MZONE,0,3,nil)
+			and Duel.IsExistingMatchingCard(s.handmat,tp,LOCATION_HAND,0,2,nil)
 	end
+
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,tp,LOCATION_EXTRA)
 end
 
+function s.fieldmat(c)
+	return c:IsFaceup()
+		and (c:IsSetCard(0x987) or c:IsSetCard(0x369))
+end
+
+function s.handmat(c)
+	return c:IsSetCard(0x987)
+		or c:IsSetCard(0x986)
+		or c:IsSetCard(0x369)
+end
 
 function s.altop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 
-	local fg=Duel.GetMatchingGroup(
-		s.fieldfilter,
-		tp,
-		LOCATION_MZONE,
-		0,
-		nil
+	if Duel.GetLocationCountFromEx(tp)<=0 then return end
+
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
+
+	local g1=Duel.SelectMatchingCard(
+		tp,s.fieldmat,tp,LOCATION_MZONE,0,3,3,nil
 	)
 
-	local hg=Duel.GetMatchingGroup(
-		s.handfilter,
-		tp,
-		LOCATION_HAND,
-		0,
-		nil
+	if #g1~=3 then return end
+
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
+
+	local g2=Duel.SelectMatchingCard(
+		tp,s.handmat,tp,LOCATION_HAND,0,2,2,nil
 	)
 
-	--------------------------------------------------
-	-- Select 3 monsters from field
-	--------------------------------------------------
+	if #g2~=2 then return end
 
-	Duel.Hint(
-		HINT_SELECTMSG,
+	local mat=g1+g2
+
+	-- Send field materials to GY
+	Duel.SendtoGrave(g1,REASON_MATERIAL+REASON_XYZ)
+
+	-- Send hand materials to GY
+	Duel.SendtoGrave(g2,REASON_MATERIAL+REASON_XYZ)
+
+	-- Special Summon from Extra Deck
+	if Duel.SpecialSummon(
+		c,
+		SUMMON_TYPE_XYZ,
 		tp,
-		HINTMSG_XMATERIAL
-	)
-
-	local sg1=fg:Select(tp,3,3,nil)
-
-	if #sg1~=3 then
-		return
+		tp,
+		false,
+		false,
+		POS_FACEUP
+	)>0 then
+		c:SetMaterial(mat)
 	end
-
-	--------------------------------------------------
-	-- Select 2 monsters from hand
-	--------------------------------------------------
-
-	Duel.Hint(
-		HINT_SELECTMSG,
-		tp,
-		HINTMSG_XMATERIAL
-	)
-
-	local sg2=hg:Select(tp,2,2,nil)
-
-	if #sg2~=2 then
-		return
-	end
-
-	--------------------------------------------------
-	-- Combine materials
-	--------------------------------------------------
-
-	sg1:Merge(sg2)
-
-	if #sg1~=5 then
-		return
-	end
-
-	--------------------------------------------------
-	-- Put all 5 underneath the Xyz monster
-	--------------------------------------------------
-
-	Duel.Overlay(c,sg1)
 end
-
 
 --------------------------------------------------
 -- Protection
 --------------------------------------------------
 
-function s.indes(e,re)
-	return re and re:GetOwnerPlayer()~=e:GetHandlerPlayer()
+function s.indval(e,re)
+	return re:GetOwnerPlayer()~=e:GetHandlerPlayer()
 end
-
-
-function s.rmlimit(e,re,tp)
-	return re and re:GetOwnerPlayer()~=e:GetHandlerPlayer()
-end
-
-
-function s.tglimit(e,re,tp)
-	return re and re:GetOwnerPlayer()~=e:GetHandlerPlayer()
-end
-
 
 --------------------------------------------------
--- Level 1 Halovian Winged Beast, 0 ATK
+-- Summon 3 Halovian monsters
 --------------------------------------------------
 
-function s.lv1filter(c)
+function s.halovian(c)
 	return c:IsSetCard(0x987)
 		and c:IsLevel(1)
 		and c:IsRace(RACE_WINGEDBEAST)
-		and c:GetAttack()==0
-		and c:IsAbleToHand()
+		and c:IsAttack(0)
+		and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
 end
 
+function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local g=Duel.GetMatchingGroup(
+		s.halovian,
+		tp,
+		LOCATION_DECK+LOCATION_HAND+LOCATION_GRAVE+LOCATION_REMOVED,
+		0,
+		nil
+	)
 
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		return Duel.IsExistingMatchingCard(
-			s.lv1filter,
-			tp,
-			LOCATION_DECK+LOCATION_HAND+LOCATION_GRAVE+LOCATION_REMOVED,
-			0,
-			3,
-			nil
-		)
+		return #g>=3
 	end
 
 	Duel.SetOperationInfo(
@@ -334,61 +196,24 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 		tp,
 		LOCATION_DECK+LOCATION_HAND+LOCATION_GRAVE+LOCATION_REMOVED
 	)
-
-	Duel.SetOperationInfo(
-		0,
-		CATEGORY_TOHAND,
-		nil,
-		3,
-		tp,
-		LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED
-	)
 end
 
-
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-
+function s.sumop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(
-		s.lv1filter,
+		s.halovian,
 		tp,
 		LOCATION_DECK+LOCATION_HAND+LOCATION_GRAVE+LOCATION_REMOVED,
 		0,
 		nil
 	)
 
-	if #g<3 then
-		return
-	end
+	if #g<3 then return end
 
-	--------------------------------------------------
-	-- Choose Special Summon OR add to hand
-	--------------------------------------------------
-
-	local op=Duel.SelectOption(
-		tp,
-		aux.Stringid(id,0),
-		aux.Stringid(id,1)
-	)
-
-	Duel.Hint(
-		HINT_SELECTMSG,
-		tp,
-		HINTMSG_SPSUMMON
-	)
-
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local sg=g:Select(tp,3,3,nil)
 
-	if #sg~=3 then
-		return
-	end
-
-	if op==0 then
-		--------------------------------------------------
-		-- Special Summon the 3 monsters
-		--------------------------------------------------
-
-		local ct=Duel.SpecialSummon(
+	if #sg==3 then
+		Duel.SpecialSummon(
 			sg,
 			0,
 			tp,
@@ -397,53 +222,19 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 			false,
 			POS_FACEUP
 		)
-
-		if ct>0 then
-			s.lock(e,tp)
-		end
-	else
-		--------------------------------------------------
-		-- Add the 3 monsters to hand
-		--------------------------------------------------
-
-		local ct=Duel.SendtoHand(
-			sg,
-			nil,
-			REASON_EFFECT
-		)
-
-		if ct>0 then
-			Duel.ConfirmCards(
-				1-tp,
-				sg
-			)
-
-			s.lock(e,tp)
-		end
 	end
-end
 
-
---------------------------------------------------
--- Lock Special Summons for the rest of the Duel
---------------------------------------------------
-
-function s.lock(e,tp)
+	-- Special Summon restriction for the rest of the Duel
 	local e1=Effect.CreateEffect(e:GetHandler())
-
 	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_OATH)
+	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-
 	e1:SetTargetRange(1,0)
-
-	e1:SetTarget(s.locktg)
-
+	e1:SetTarget(s.sumlimit)
 	Duel.RegisterEffect(e1,tp)
 end
 
-
-function s.locktg(e,c)
+function s.sumlimit(e,c)
 	return not (
 		c:IsSetCard(0x987)
 		or c:IsSetCard(0x986)
@@ -451,244 +242,151 @@ function s.locktg(e,c)
 	)
 end
 
-
 --------------------------------------------------
--- Quick Effect condition
+-- Quick Effect
 --------------------------------------------------
 
 function s.qcon(e,tp,eg,ep,ev,re,r,rp)
-	return rp~=tp
+	return rp==1-tp
 		and Duel.IsChainDisablable(ev)
 end
 
+function s.qfilter(c)
+	return c:IsSetCard(0x987)
+		and c:IsMonster()
+end
 
---------------------------------------------------
--- Quick Effect cost
---
--- Discard 1 Halovian monster
--- OR send 1 Halovian monster you control
--- to the GY.
---------------------------------------------------
-
-function s.qcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local h=Duel.IsExistingMatchingCard(
-		s.halcostfilter,
-		tp,
-		LOCATION_HAND,
-		0,
-		1,
-		nil
-	)
-
-	local f=Duel.IsExistingMatchingCard(
-		s.halcostfilter,
-		tp,
-		LOCATION_MZONE,
-		0,
-		1,
-		nil
-	)
-
+function s.qtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		return h or f
+		return Duel.IsExistingMatchingCard(
+			s.qfilter,tp,LOCATION_HAND,0,1,nil
+		)
+		or Duel.IsExistingMatchingCard(
+			s.qfilter,tp,LOCATION_MZONE,0,1,nil
+		)
 	end
+
+	Duel.SetOperationInfo(0,CATEGORY_NEGATE,eg,1,tp,0)
+end
+
+function s.qop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+
+	local b1=Duel.IsExistingMatchingCard(
+		s.qfilter,tp,LOCATION_HAND,0,1,nil
+	)
+
+	local b2=Duel.IsExistingMatchingCard(
+		s.qfilter,tp,LOCATION_MZONE,0,1,nil
+	)
+
+	if not (b1 or b2) then return end
 
 	local op
 
-	if h and f then
+	if b1 and b2 then
 		op=Duel.SelectOption(
 			tp,
 			aux.Stringid(id,2),
 			aux.Stringid(id,3)
 		)
-	elseif h then
+	elseif b1 then
 		op=0
 	else
 		op=1
 	end
 
+	-- Discard 1 Halovian
 	if op==0 then
-		Duel.Hint(
-			HINT_SELECTMSG,
-			tp,
-			HINTMSG_DISCARD
-		)
-
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DISCARD)
 		local g=Duel.SelectMatchingCard(
-			tp,
-			s.halcostfilter,
-			tp,
-			LOCATION_HAND,
-			0,
-			1,
-			1,
-			nil
+			tp,s.qfilter,tp,LOCATION_HAND,0,1,1,nil
 		)
 
-		Duel.SendtoGrave(
-			g,
-			REASON_COST+REASON_DISCARD
-		)
+		if #g>0 then
+			Duel.SendtoGrave(g,REASON_EFFECT+REASON_DISCARD)
+		else
+			return
+		end
+
+	-- Send 1 Halovian you control to GY
 	else
-		Duel.Hint(
-			HINT_SELECTMSG,
-			tp,
-			HINTMSG_TOGRAVE
-		)
-
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 		local g=Duel.SelectMatchingCard(
-			tp,
-			s.halcostfilter,
-			tp,
-			LOCATION_MZONE,
-			0,
-			1,
-			1,
-			nil
+			tp,s.qfilter,tp,LOCATION_MZONE,0,1,1,nil
 		)
 
-		Duel.SendtoGrave(
-			g,
-			REASON_COST
-		)
-	end
-end
-
-
-function s.halcostfilter(c)
-	return c:IsSetCard(0x987)
-		and c:IsAbleToGrave()
-end
-
-
---------------------------------------------------
--- Quick Effect target
---------------------------------------------------
-
-function s.qtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		return true
+		if #g>0 then
+			Duel.SendtoGrave(g,REASON_EFFECT)
+		else
+			return
+		end
 	end
 
-	Duel.SetOperationInfo(
-		0,
-		CATEGORY_DESTROY,
-		nil,
-		1,
-		0,
-		0
-	)
-end
+	if not Duel.IsChainDisablable(ev) then return end
 
+	local rc=re:GetHandler()
 
---------------------------------------------------
--- Quick Effect operation
---------------------------------------------------
+	local choices={}
 
-function s.qop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
+	-- Destroy
+	if rc:IsRelateToEffect(re) and rc:IsDestructable() then
+		table.insert(choices,0)
+	end
 
-	local op=Duel.SelectOption(
+	-- Negate + destroy
+	table.insert(choices,1)
+
+	-- Banish until End Phase
+	if rc:IsRelateToEffect(re) and rc:IsAbleToRemove() then
+		table.insert(choices,2)
+	end
+
+	-- Special Summon Halovian
+	if Duel.IsExistingMatchingCard(
+		s.haloviansummon,
 		tp,
+		LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED,
+		0,
+		1,nil
+	) then
+		table.insert(choices,3)
+	end
+
+	if #choices==0 then return end
+
+	local op=Duel.SelectOption(tp,
 		aux.Stringid(id,4),
 		aux.Stringid(id,5),
 		aux.Stringid(id,6),
 		aux.Stringid(id,7)
 	)
 
-	--------------------------------------------------
-	-- 1. Destroy 1 card in hand or opponent's field
-	--------------------------------------------------
-
 	if op==0 then
-		local g=Duel.GetMatchingGroup(
-			s.destroyfilter,
-			tp,
-			LOCATION_HAND,
-			LOCATION_MZONE,
-			nil
-		)
-
-		if #g==0 then
-			return
+		if rc:IsRelateToEffect(re) then
+			Duel.Destroy(rc,REASON_EFFECT)
 		end
-
-		Duel.Hint(
-			HINT_SELECTMSG,
-			tp,
-			HINTMSG_DESTROY
-		)
-
-		local tc=g:Select(tp,1,1,nil):GetFirst()
-
-		if tc then
-			Duel.Destroy(
-				tc,
-				REASON_EFFECT
-			)
-		end
-
-	--------------------------------------------------
-	-- 2. Negate and destroy
-	--------------------------------------------------
 
 	elseif op==1 then
-		if Duel.NegateActivation(ev) then
-			Duel.Destroy(
-				re:GetHandler(),
-				REASON_EFFECT
-			)
+		if Duel.NegateEffect(ev) and rc:IsRelateToEffect(re) then
+			Duel.Destroy(rc,REASON_EFFECT)
 		end
-
-	--------------------------------------------------
-	-- 3. Banish until End Phase
-	--------------------------------------------------
 
 	elseif op==2 then
-		local tc=re:GetHandler()
-
-		if tc and tc:IsRelateToChain() then
-			Duel.Remove(
-				tc,
-				POS_FACEUP,
-				REASON_EFFECT+REASON_TEMPORARY
-			)
-
-			local e1=Effect.CreateEffect(c)
-
-			e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-			e1:SetCode(EVENT_PHASE+PHASE_END)
-
-			e1:SetCountLimit(1)
-
-			e1:SetLabelObject(tc)
-
-			e1:SetOperation(s.returnop)
-
-			Duel.RegisterEffect(e1,tp)
+		if rc:IsRelateToEffect(re) then
+			Duel.Remove(rc,POS_FACEUP,REASON_EFFECT)
 		end
 
-	--------------------------------------------------
-	-- 4. Special Summon 1 Halovian
-	--------------------------------------------------
-
-	else
-		Duel.Hint(
-			HINT_SELECTMSG,
-			tp,
-			HINTMSG_SPSUMMON
-		)
+	elseif op==3 then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 
 		local g=Duel.SelectMatchingCard(
 			tp,
-			s.halspfilter,
+			s.haloviansummon,
 			tp,
-			LOCATION_HAND+LOCATION_DECK+
-			LOCATION_GRAVE+LOCATION_REMOVED,
+			LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED,
 			0,
-			1,
-			1,
-			nil
+			1,1,nil
 		)
 
 		if #g>0 then
@@ -705,45 +403,8 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
-
---------------------------------------------------
--- Destroy target
--- Hand of controller OR opponent's field
---------------------------------------------------
-
-function s.destroyfilter(c,tp)
-	return c:IsDestructable()
-		and (
-			c:IsLocation(LOCATION_HAND)
-			or (
-				c:IsLocation(LOCATION_MZONE)
-				and c:IsControler(1-tp)
-			)
-		)
-end
-
-
---------------------------------------------------
--- Special Summon Halovian
---------------------------------------------------
-
-function s.halspfilter(c)
+function s.haloviansummon(c)
 	return c:IsSetCard(0x987)
 		and c:IsMonster()
-		and c:IsCanBeSpecialSummoned(nil,0,TP, false)
-end
-
-
---------------------------------------------------
--- Return banished card at End Phase
---------------------------------------------------
-
-function s.returnop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=e:GetLabelObject()
-
-	if tc and tc:IsLocation(LOCATION_REMOVED) then
-		Duel.ReturnToField(tc)
-	end
-
-	e:Reset()
+		and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
 end

@@ -24,7 +24,7 @@ function s.initial_effect(c)
     e1:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
     e1:SetRange(LOCATION_MZONE)
-    e1:SetValue(aux.txdn)
+    e1:SetValue(s.indval)
     c:RegisterEffect(e1)
 
     -- Protection 2: Cannot be destroyed, tributed, banished, or sent to GY by opponent's card effects
@@ -90,11 +90,9 @@ function s.xyzfilter(c,xyz,sumtype,tp)
 end
 
 -- Alternative Xyz Summon Logic
--- Field: 3 "Halovian" hoặc "Genshin" monsters
 function s.altmfilter_field(c)
     return (c:IsSetCard(0x987) or c:IsSetCard(0x369)) and c:IsCanBeXyzMaterial(nil) and c:IsFaceup()
 end
--- Hand: 2 "Halovian", "Genshin", hoặc "Star Rail" cards
 function s.altmfilter_hand(c)
     return s.is_archetype(c) and c:IsCanBeXyzMaterial(nil)
 end
@@ -175,7 +173,6 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 
-    -- Restriction: Chỉ được Gọi đặc biệt quái thú Genshin (0x369), Star Rail (0x986), và Halovian (0x987) trong phần còn lại của trận đấu
     local e1=Effect.CreateEffect(e:GetHandler())
     e1:SetType(EFFECT_TYPE_FIELD)
     e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)

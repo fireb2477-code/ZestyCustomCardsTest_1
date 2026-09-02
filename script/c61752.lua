@@ -1,18 +1,13 @@
 -- Lala - The Halovian
 local s,id=GetID()
 function s.initial_effect(c)
-    -- This card is always treated as "Genshin" (0xa00), "Star rail" (0xb00), and "Halovian" (0x987)
-    c:AddSetcodesRule(id,false,0x987,0xa00,0xb00)
-
-    -- 1. Special Summon from hand
+    -- 1. Special Summon procedure from hand (Không tạo chuỗi)
     local e1=Effect.CreateEffect(c)
-    e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-    e1:SetType(EFFECT_TYPE_IGNITION)
+    e1:SetType(EFFECT_TYPE_FIELD)
+    e1:SetCode(EFFECT_SPSUMMON_PROC)
+    e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
     e1:SetRange(LOCATION_HAND)
     e1:SetCondition(s.spcon)
-    e1:SetTarget(s.sptg)
-    e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
 
     -- 2. Place 1 "The stage of infinite delight"
@@ -43,23 +38,15 @@ end
 s.listed_series={0x987}
 s.listed_names={15938,39647} -- The stage of infinite delight, Robin- The star rail summeretto
 
--- Logic Effect 1 (Special Summon)
+-- Logic Effect 1 (Special Summon Procedure - Non-Chain)
 function s.spfilter(c)
     return c:IsFaceup() and c:IsSetCard(0x987)
 end
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,0,1,nil)
-end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
-end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if c:IsRelateToEffect(e) then
-        Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
-    end
+function s.spcon(e,c)
+    if c==nil then return true end
+    local tp=c:GetControler()
+    return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+        and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 
 -- Logic Effect 2 (Place Spell)
@@ -100,7 +87,6 @@ function s.excost(e,tp,eg,ep,ev,re,r,rp,chk)
         return cost_met and Duel.IsExistingMatchingCard(s.robinfilter,tp,LOCATION_MZONE,0,1,nil)
     end
     
-    -- Xử lý điều kiện Reveal tùy theo vị trí phát động
     if is_hand then
         Duel.ConfirmCards(1-tp,c)
     else
@@ -110,7 +96,6 @@ function s.excost(e,tp,eg,ep,ev,re,r,rp,chk)
         Duel.ShuffleHand(tp)
     end
     
-    -- Xử lý điều kiện Detach từ Robin
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DEATTACHFROM)
     local rg=Duel.SelectMatchingCard(tp,s.robinfilter,tp,LOCATION_MZONE,0,1,1,nil)
     rg:GetFirst():RemoveOverlayCard(tp,1,1,REASON_COST)

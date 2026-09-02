@@ -27,7 +27,7 @@ function s.initial_effect(c)
     e1:SetValue(s.indval)
     c:RegisterEffect(e1)
 
-    -- Protection 2: Cannot be destroyed, tributed, banished, or sent to GY by opponent's card effects
+    -- Protection 2: Cannot be destroyed by opponent's card effects
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_SINGLE)
     e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -36,45 +36,64 @@ function s.initial_effect(c)
     e2:SetValue(s.indval)
     c:RegisterEffect(e2)
 
-    local e3=e2:Clone()
-    e3:SetCode(EFFECT_UNRELEASABLE_EFF)
+    -- Protection 3: Cannot be tributed by opponent
+    local e3=Effect.CreateEffect(c)
+    e3:SetType(EFFECT_TYPE_SINGLE)
+    e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+    e3:SetRange(LOCATION_MZONE)
+    e3:SetCode(EFFECT_UNRELEASABLE_SUMM)
+    e3:SetValue(s.reltg)
     c:RegisterEffect(e3)
 
-    local e4=e2:Clone()
-    e4:SetCode(EFFECT_CANNOT_REMOVE)
+    local e4=e3:Clone()
+    e4:SetCode(EFFECT_UNRELEASABLE_NONSUMM)
     c:RegisterEffect(e4)
 
-    local e5=e2:Clone()
-    e5:SetCode(EFFECT_CANNOT_TO_GRAVE)
+    -- Protection 4: Cannot be banished by opponent's card effects
+    local e5=Effect.CreateEffect(c)
+    e5:SetType(EFFECT_TYPE_SINGLE)
+    e5:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+    e5:SetRange(LOCATION_MZONE)
+    e5:SetCode(EFFECT_CANNOT_REMOVE)
+    e5:SetValue(s.indval)
     c:RegisterEffect(e5)
 
-    -- On Normal or Special Summon effect
+    -- Protection 5: Unaffected by opponent's card effects (covers send to GY, bounce, etc.)
     local e6=Effect.CreateEffect(c)
-    e6:SetDescription(aux.Stringid(id,1))
-    e6:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND+CATEGORY_SEARCH)
-    e6:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e6:SetProperty(EFFECT_FLAG_DELAY)
-    e6:SetCode(EVENT_SUMMON_SUCCESS)
-    e6:SetTarget(s.sumtg)
-    e6:SetOperation(s.sumop)
+    e6:SetType(EFFECT_TYPE_SINGLE)
+    e6:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+    e6:SetRange(LOCATION_MZONE)
+    e6:SetCode(EFFECT_IMMUNE_EFFECT)
+    e6:SetValue(s.efilter)
     c:RegisterEffect(e6)
 
-    local e7=e6:Clone()
-    e7:SetCode(EVENT_SPSUMMON_SUCCESS)
+    -- On Normal or Special Summon effect
+    local e7=Effect.CreateEffect(c)
+    e7:SetDescription(aux.Stringid(id,1))
+    e7:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND+CATEGORY_SEARCH)
+    e7:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+    e7:SetProperty(EFFECT_FLAG_DELAY)
+    e7:SetCode(EVENT_SUMMON_SUCCESS)
+    e7:SetTarget(s.sumtg)
+    e7:SetOperation(s.sumop)
     c:RegisterEffect(e7)
 
-    -- Quick Effect: Respond to opponent's card effect activation
-    local e8=Effect.CreateEffect(c)
-    e8:SetDescription(aux.Stringid(id,5))
-    e8:SetType(EFFECT_TYPE_QUICK_O)
-    e8:SetCode(EVENT_CHAINING)
-    e8:SetRange(LOCATION_MZONE)
-    e8:SetCountLimit(1,id)
-    e8:SetCondition(s.effcon)
-    e8:SetCost(s.effcost)
-    e8:SetTarget(s.efftg)
-    e8:SetOperation(s.effop)
+    local e8=e7:Clone()
+    e8:SetCode(EVENT_SPSUMMON_SUCCESS)
     c:RegisterEffect(e8)
+
+    -- Quick Effect: Respond to opponent's card effect activation
+    local e9=Effect.CreateEffect(c)
+    e9:SetDescription(aux.Stringid(id,5))
+    e9:SetType(EFFECT_TYPE_QUICK_O)
+    e9:SetCode(EVENT_CHAINING)
+    e9:SetRange(LOCATION_MZONE)
+    e9:SetCountLimit(1,id)
+    e9:SetCondition(s.effcon)
+    e9:SetCost(s.effcost)
+    e9:SetTarget(s.efftg)
+    e9:SetOperation(s.effop)
+    c:RegisterEffect(e9)
 end
 
 s.listed_series={0x987,0x369,0x986}
@@ -128,9 +147,15 @@ function s.altxyzop(e,tp,eg,ep,ev,re,r,rp,c,og,min,max)
     g:Delete()
 end
 
--- Protection Filter
+-- Protection Filters
 function s.indval(e,re,rp)
     return rp==1-e:GetHandlerPlayer()
+end
+function s.reltg(e,c)
+    return c:GetControler()~=e:GetHandlerPlayer()
+end
+function s.efilter(e,te)
+    return te:GetOwnerPlayer()~=e:GetHandlerPlayer()
 end
 
 -- Summon Effect Logic

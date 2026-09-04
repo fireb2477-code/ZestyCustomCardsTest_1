@@ -143,10 +143,10 @@ end
 
 function s.altop(e,tp,eg,ep,ev,re,r,rp,c,og,min,max)
     local g=e:GetLabelObject()
-    if not g then return end
-    c:SetMaterial(g)
-    Duel.Overlay(c,g)
-    g:Delete()
+    if g then
+        c:SetMaterial(g)
+        Duel.Overlay(c,g)
+    end
 end
 
 --------------------------------------------------
@@ -195,7 +195,7 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
 
         local op=0
         if can_sp and can_th then
-            op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 2: SP Summon, 3: Add to Hand
+            op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
         elseif can_sp then
             op=0
         elseif can_th then
@@ -212,12 +212,11 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 
-    -- Duel Restriction
     local e1=Effect.CreateEffect(e:GetHandler())
     e1:SetType(EFFECT_TYPE_FIELD)
     e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
     e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-    e1:SetDescription(aux.Stringid(id,13)) -- Custom Description for restriction
+    e1:SetDescription(aux.Stringid(id,13))
     e1:SetTargetRange(1,0)
     e1:SetTarget(s.sumlimit)
     Duel.RegisterEffect(e1,tp)
@@ -248,7 +247,7 @@ function s.qcost(e,tp,eg,ep,ev,re,r,rp,chk)
 
     local op=0
     if b1 and b2 then
-        op=Duel.SelectOption(tp,aux.Stringid(id,5),aux.Stringid(id,6)) -- 5: Discard, 6: Send from field
+        op=Duel.SelectOption(tp,aux.Stringid(id,5),aux.Stringid(id,6))
     elseif b1 then
         op=0
     else
@@ -317,7 +316,7 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
         local b2=Duel.GetMatchingGroupCount(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)>0
         local opt=0
         if b1 and b2 then
-            opt=Duel.SelectOption(tp,aux.Stringid(id,11),aux.Stringid(id,12)) -- 11: Destroy Hand, 12: Destroy Field
+            opt=Duel.SelectOption(tp,aux.Stringid(id,11),aux.Stringid(id,12))
         elseif b1 then opt=0
         elseif b2 then opt=1
         else return end

@@ -38,11 +38,11 @@ function s.initial_effect(c)
     e3:SetType(EFFECT_TYPE_SINGLE)
     e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
     e3:SetRange(LOCATION_MZONE)
-    e3:SetCode(EFFECT_UNRELEASABLE_SUMM)
+    e3:SetCode(EFFECT_UNRELEASABLE_SUM)
     e3:SetValue(s.reltg)
     c:RegisterEffect(e3)
     local e3b=e3:Clone()
-    e3b:SetCode(EFFECT_UNRELEASABLE_NONSUMM)
+    e3b:SetCode(EFFECT_UNRELEASABLE_NONSUM)
     c:RegisterEffect(e3b)
 
     -- Protection 3: Cannot be banished by opponent

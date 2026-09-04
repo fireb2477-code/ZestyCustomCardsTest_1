@@ -163,7 +163,7 @@ function s.altop(e,tp,eg,ep,ev,re,r,rp,c,og,min,max)
     if g then
         c:SetMaterial(g)
         Duel.Overlay(c,g)
-        g:Delete() -- Fix Memory Leak
+        g:DeleteGroup() -- Fixed: Changed Delete() to DeleteGroup()
     end
 end
 
@@ -206,7 +206,7 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(aux.NecroValleyFilter(s.sumfilter),tp,LOCATION_DECK+LOCATION_HAND+LOCATION_GRAVE+LOCATION_REMOVED,0,nil,e,tp)
     if #g<3 then return end
 
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON) -- Fix HINTMSG_OPERATECARD
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local sg=g:Select(tp,3,3,nil)
 
     if #sg==3 then
@@ -234,11 +234,8 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 
-    --------------------------------------------------
-    -- Genshin / Star Rail / Halovian restriction
-    --------------------------------------------------
     local e1=Effect.CreateEffect(e:GetHandler())
-    e1:SetType(EFFECT_TYPE_FIELD) -- Fix: Remove EFFECT_TYPE_CONTINUOUS
+    e1:SetType(EFFECT_TYPE_FIELD)
     e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_CLIENT_HINT)
     e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
     e1:SetDescription(aux.Stringid(id,13))
@@ -361,10 +358,14 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
         else return end
 
         if opt==0 then
-            -- Fix: Select hand card randomly, matching game rules
-            local hg=Duel.GetFieldGroup(tp,0,LOCATION_HAND):RandomSelect(tp,1)
+            -- Mới sửa: Cấp quyền tự chọn bài trên tay đối thủ thay vì RandomSelect
+            local hg=Duel.GetFieldGroup(tp,0,LOCATION_HAND)
             if #hg>0 then
-                Duel.Destroy(hg,REASON_EFFECT)
+                Duel.ConfirmCards(tp,hg) -- Cho phép bạn nhìn tay đối thủ
+                Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+                local sg=hg:Select(tp,1,1,nil) -- Tự tay chọn 1 lá
+                Duel.Destroy(sg,REASON_EFFECT)
+                Duel.ShuffleHand(1-tp) -- Xào lại tay đối thủ sau khi xem
             end
         else
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
@@ -382,33 +383,25 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
 
     elseif sel==2 then
         local tc=re:GetHandler()
-        if tc and tc:IsRelateToEffect(re) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT+REASON_TEMPORARY)>0 then
-            local e1=Effect.CreateEffect(e:GetHandler())
-            e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-            e1:SetCode(EVENT_PHASE+PHASE_END)
-            e1:SetReset(RESET_PHASE+PHASE_END)
-            e1:SetCountLimit(1)
-            e1:SetLabelObject(tc)
-            e1:SetOperation(s.retop)
-            Duel.RegisterEffect(e1,tp)
-        end
+        Lỗi `attempt to call a nil value (method 'Delete')` hiển thị trong file "1788511749858.jpeg" xảy ra vì API của EDOPro không hỗ trợ phương thức `:Delete()` để phá hủy lá bài. Bạn đang nhầm lẫn giữa lệnh xóa bộ nhớ của Group và lệnh phá hủy bài trong game.
 
-    elseif sel==3 then
-        if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-        local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.qspfilter),tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,e,tp)
-        if #g>0 then
-            Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
-        end
-    end
-end
+**Nguyên nhân cụ thể**
+* Nếu bạn muốn dọn dẹp một biến Group khỏi bộ nhớ (garbage collection), lệnh đúng là `Group.DeleteGroup()` (ví dụ: `g:DeleteGroup()`).
+* Nếu bạn muốn **phá hủy** (Destroy) một lá bài trên sân hoặc trên tay, lệnh bắt buộc phải là `Duel.Destroy()`. Việc gọi `card:Delete()` hoặc `group:Delete()` sẽ lập tức gây ra lỗi Script Error ở dòng 166 như trong hình.
 
---------------------------------------------------
--- Return banished card at End Phase
---------------------------------------------------
-function s.retop(e,tp,eg,ep,ev,re,r,rp)
-    local tc=e:GetLabelObject()
-    if tc and tc:IsLocation(LOCATION_REMOVED) then
-        Duel.ReturnToField(tc)
-    end
+**Cách sửa lỗi và tạo Tùy chọn (Optional) Destroy trên tay**
+Để sửa lỗi và thiết lập hiệu ứng thành "được quyền chọn", bạn cần dùng `Duel.SelectYesNo` (để hỏi xác nhận có muốn phá hủy không) hoặc dùng `Duel.SelectMatchingCard` với thông số tối thiểu (`min`) bằng 0.
+
+Hãy thay thế đoạn code bị lỗi ở dòng 166 bằng một trong hai phương án sau:
+
+**Phương án 1: Hỏi Yes/No trước, sau đó cho người chơi chọn lá bài (Khuyên dùng)**
+```lua
+local g = Duel.GetMatchingGroup(Card.IsDestructable, tp, LOCATION_HAND, 0, nil)
+-- Nếu có bài trên tay và người chơi đồng ý (Bạn có thể thay số 0 bằng text index phù hợp trong .cdb)
+if #g > 0 and Duel.SelectYesNo(tp, aux.Stringid(39647, 0)) then
+    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_DESTROY)
+    -- Cho phép người chơi tự chọn đúng 1 lá
+    local sg = g:Select(tp, 1, 1, nil)
+    -- Thực hiện Destroy
+    Duel.Destroy(sg, REASON_EFFECT) -- Thay bằng REASON_COST nếu đây là chi phí kích hoạt
 end

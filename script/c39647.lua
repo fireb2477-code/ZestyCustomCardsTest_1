@@ -7,9 +7,7 @@ function s.initial_effect(c)
     -- Must be properly Xyz Summoned
     c:EnableReviveLimit()
 
-    --------------------------------------------------
     -- Standard Xyz Summon
-    --------------------------------------------------
     Xyz.AddProcedure(c,s.xyzfilter,12,2)
 
     --------------------------------------------------
@@ -88,7 +86,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e6)
 
     --------------------------------------------------
-    -- Xyz Summon effect
+    -- On Xyz Summon
     --------------------------------------------------
     local e7=Effect.CreateEffect(c)
     e7:SetDescription(aux.Stringid(id,1))
@@ -106,8 +104,12 @@ function s.initial_effect(c)
     --------------------------------------------------
     local e8=Effect.CreateEffect(c)
     e8:SetDescription(aux.Stringid(id,4))
-    e8:SetCategory(CATEGORY_DESTROY+CATEGORY_NEGATE+
-        CATEGORY_REMOVE+CATEGORY_SPECIAL_SUMMON)
+    e8:SetCategory(
+        CATEGORY_DESTROY+
+        CATEGORY_NEGATE+
+        CATEGORY_REMOVE+
+        CATEGORY_SPECIAL_SUMMON
+    )
     e8:SetType(EFFECT_TYPE_QUICK_O)
     e8:SetCode(EVENT_CHAINING)
     e8:SetRange(LOCATION_MZONE)
@@ -131,14 +133,14 @@ end
 
 --------------------------------------------------
 -- Alternative Xyz Summon
--- GIỮ NGUYÊN
 --------------------------------------------------
 
 function s.altmfilter(c)
-    return (c:IsSetCard(0x987)
+    return (
+        c:IsSetCard(0x987)
         or c:IsSetCard(0x986)
-        or c:IsSetCard(0x369))
-        and c:IsCanBeXyzMaterial(nil)
+        or c:IsSetCard(0x369)
+    ) and c:IsCanBeXyzMaterial(nil)
 end
 
 function s.fieldmat(c)
@@ -164,6 +166,7 @@ function s.altcon(e,c,og,min,max)
 end
 
 function s.alttg(e,tp,eg,ep,ev,re,r,rp,chk,c,og,min,max)
+
     local mg1=Duel.GetMatchingGroup(
         s.fieldmat,tp,LOCATION_MZONE,0,nil
     )
@@ -191,6 +194,7 @@ function s.alttg(e,tp,eg,ep,ev,re,r,rp,chk,c,og,min,max)
 end
 
 function s.altop(e,tp,eg,ep,ev,re,r,rp,c,og,min,max)
+
     local g=e:GetLabelObject()
 
     if g then
@@ -228,20 +232,28 @@ function s.sumfilter(c,e,tp)
             c:IsAbleToHand()
             or (
                 e
-                and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+                and c:IsCanBeSpecialSummoned(
+                    e,0,tp,false,false
+                )
             )
         )
 end
 
 function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
+
     if chk==0 then
+
         local g=Duel.GetMatchingGroup(
             s.sumfilter,
             tp,
-            LOCATION_DECK+LOCATION_HAND+
-            LOCATION_GRAVE+LOCATION_REMOVED,
+            LOCATION_DECK+
+            LOCATION_HAND+
+            LOCATION_GRAVE+
+            LOCATION_REMOVED,
             0,
-            nil,e,tp
+            nil,
+            e,
+            tp
         )
 
         return #g>=3
@@ -253,8 +265,10 @@ function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
         nil,
         3,
         tp,
-        LOCATION_DECK+LOCATION_HAND+
-        LOCATION_GRAVE+LOCATION_REMOVED
+        LOCATION_DECK+
+        LOCATION_HAND+
+        LOCATION_GRAVE+
+        LOCATION_REMOVED
     )
 
     Duel.SetOperationInfo(
@@ -263,40 +277,59 @@ function s.sumtg(e,tp,eg,ep,ev,re,r,rp,chk)
         nil,
         3,
         tp,
-        LOCATION_DECK+LOCATION_HAND+
-        LOCATION_GRAVE+LOCATION_REMOVED
+        LOCATION_DECK+
+        LOCATION_HAND+
+        LOCATION_GRAVE+
+        LOCATION_REMOVED
     )
 end
 
 function s.sumop(e,tp,eg,ep,ev,re,r,rp)
+
     local g=Duel.GetMatchingGroup(
         aux.NecroValleyFilter(s.sumfilter),
         tp,
-        LOCATION_DECK+LOCATION_HAND+
-        LOCATION_GRAVE+LOCATION_REMOVED,
+        LOCATION_DECK+
+        LOCATION_HAND+
+        LOCATION_GRAVE+
+        LOCATION_REMOVED,
         0,
-        nil,e,tp
+        nil,
+        e,
+        tp
     )
 
     if #g<3 then
         return
     end
 
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
+    Duel.Hint(
+        HINT_SELECTMSG,
+        tp,
+        HINTMSG_OPERATECARD
+    )
 
     local sg=g:Select(tp,3,3,nil)
 
     if #sg==3 then
 
         local can_sp=
-            Duel.GetLocationCount(tp,LOCATION_MZONE)>=3
+            Duel.GetLocationCount(
+                tp,
+                LOCATION_MZONE
+            )>=3
             and not Duel.IsPlayerAffectedByEffect(
-                tp,CARD_BLUEEYES_SPIRIT
+                tp,
+                CARD_BLUEEYES_SPIRIT
             )
             and sg:FilterCount(
                 Card.IsCanBeSpecialSummoned,
                 nil,
-                e,0,tp,false,false
+                e,
+                0,
+                tp,
+                false,
+                false
             )==3
 
         local can_th=
@@ -308,20 +341,27 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
         local op=0
 
         if can_sp and can_th then
+
             op=Duel.SelectOption(
                 tp,
                 aux.Stringid(id,2),
                 aux.Stringid(id,3)
             )
+
         elseif can_sp then
+
             op=0
+
         elseif can_th then
+
             op=1
+
         else
             return
         end
 
         if op==0 then
+
             Duel.SpecialSummon(
                 sg,
                 0,
@@ -331,7 +371,9 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
                 false,
                 POS_FACEUP
             )
+
         else
+
             Duel.SendtoHand(
                 sg,
                 nil,
@@ -346,16 +388,19 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
     end
 
     --------------------------------------------------
-    -- Restriction for the rest of the Duel
+    -- Genshin / Star Rail / Halovian restriction
     --------------------------------------------------
 
     local e1=Effect.CreateEffect(e:GetHandler())
 
-    e1:SetType(EFFECT_TYPE_FIELD)
+    e1:SetType(
+        EFFECT_TYPE_FIELD
+        +EFFECT_TYPE_CONTINUOUS
+    )
 
     e1:SetProperty(
-        EFFECT_FLAG_PLAYER_TARGET+
-        EFFECT_FLAG_CLIENT_HINT
+        EFFECT_FLAG_PLAYER_TARGET
+        +EFFECT_FLAG_CLIENT_HINT
     )
 
     e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
@@ -365,13 +410,13 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
     )
 
     e1:SetTargetRange(1,0)
-
     e1:SetTarget(s.sumlimit)
 
     Duel.RegisterEffect(e1,tp)
 end
 
 function s.sumlimit(e,c)
+
     return not (
         c:IsSetCard(0x987)
         or c:IsSetCard(0x986)
@@ -431,14 +476,19 @@ function s.qcost(e,tp,eg,ep,ev,re,r,rp,chk)
     local op=0
 
     if b1 and b2 then
+
         op=Duel.SelectOption(
             tp,
             aux.Stringid(id,5),
             aux.Stringid(id,6)
         )
+
     elseif b1 then
+
         op=0
+
     else
+
         op=1
     end
 
@@ -479,10 +529,11 @@ function s.qcost(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 --------------------------------------------------
--- Quick Effect - Special Summon option
+-- Special Summon filter
 --------------------------------------------------
 
 function s.qspfilter(c,e,tp)
+
     return c:IsSetCard(0x987)
         and c:IsLevel(1)
         and c:IsAttack(0)
@@ -524,8 +575,10 @@ function s.qtg(e,tp,eg,ep,ev,re,r,rp,chk)
         and Duel.IsExistingMatchingCard(
             s.qspfilter,
             tp,
-            LOCATION_HAND+LOCATION_DECK+
-            LOCATION_GRAVE+LOCATION_REMOVED,
+            LOCATION_HAND+
+            LOCATION_DECK+
+            LOCATION_GRAVE+
+            LOCATION_REMOVED,
             0,
             1,
             nil,
@@ -574,10 +627,6 @@ function s.qtg(e,tp,eg,ep,ev,re,r,rp,chk)
 
     e:SetLabel(sel)
 
-    --------------------------------------------------
-    -- Destroy
-    --------------------------------------------------
-
     if sel==0 then
 
         e:SetCategory(CATEGORY_DESTROY)
@@ -598,10 +647,6 @@ function s.qtg(e,tp,eg,ep,ev,re,r,rp,chk)
             0,
             0
         )
-
-    --------------------------------------------------
-    -- Negate + Destroy
-    --------------------------------------------------
 
     elseif sel==1 then
 
@@ -631,10 +676,6 @@ function s.qtg(e,tp,eg,ep,ev,re,r,rp,chk)
             )
         end
 
-    --------------------------------------------------
-    -- Banish until End Phase
-    --------------------------------------------------
-
     elseif sel==2 then
 
         e:SetCategory(CATEGORY_REMOVE)
@@ -648,15 +689,9 @@ function s.qtg(e,tp,eg,ep,ev,re,r,rp,chk)
             0
         )
 
-    --------------------------------------------------
-    -- Special Summon
-    --------------------------------------------------
-
     elseif sel==3 then
 
-        e:SetCategory(
-            CATEGORY_SPECIAL_SUMMON
-        )
+        e:SetCategory(CATEGORY_SPECIAL_SUMMON)
 
         Duel.SetOperationInfo(
             0,
@@ -664,8 +699,10 @@ function s.qtg(e,tp,eg,ep,ev,re,r,rp,chk)
             nil,
             1,
             tp,
-            LOCATION_HAND+LOCATION_DECK+
-            LOCATION_GRAVE+LOCATION_REMOVED
+            LOCATION_HAND+
+            LOCATION_DECK+
+            LOCATION_GRAVE+
+            LOCATION_REMOVED
         )
     end
 end
@@ -679,9 +716,8 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
     local sel=e:GetLabel()
 
     --------------------------------------------------
-    -- 0: Destroy
+    -- 0: Destroy card in hand / field
     --------------------------------------------------
-
     if sel==0 then
 
         local b1=
@@ -711,29 +747,44 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
             )
 
         elseif b1 then
+
             opt=0
+
         elseif b2 then
+
             opt=1
+
         else
             return
         end
 
+        --------------------------------------------------
+        -- Destroy random card in opponent's hand
+        -- FIX: dùng SelectMatchingCard thay RandomSelect
+        --------------------------------------------------
         if opt==0 then
 
-            local hg=Duel.GetFieldGroup(
+            local hg=Duel.SelectMatchingCard(
+                tp,
+                aux.TRUE,
                 tp,
                 0,
-                LOCATION_HAND
-            ):RandomSelect(
-                tp,
-                1
+                LOCATION_HAND,
+                1,
+                1,
+                nil
             )
 
-            Duel.Destroy(
-                hg,
-                REASON_EFFECT
-            )
+            if #hg>0 then
+                Duel.Destroy(
+                    hg,
+                    REASON_EFFECT
+                )
+            end
 
+        --------------------------------------------------
+        -- Destroy opponent's field card
+        --------------------------------------------------
         else
 
             Duel.Hint(
@@ -753,25 +804,27 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
                 nil
             )
 
-            Duel.HintSelection(fg)
+            if #fg>0 then
 
-            Duel.Destroy(
-                fg,
-                REASON_EFFECT
-            )
+                Duel.HintSelection(fg)
+
+                Duel.Destroy(
+                    fg,
+                    REASON_EFFECT
+                )
+            end
         end
 
     --------------------------------------------------
-    -- 1: Negate + Destroy
+    -- 1: Negate + destroy
     --------------------------------------------------
-
     elseif sel==1 then
 
         if Duel.NegateActivation(ev)
             and re:GetHandler():IsRelateToEffect(re) then
 
             Duel.Destroy(
-                re:GetHandler(),
+                eg,
                 REASON_EFFECT
             )
         end
@@ -779,12 +832,12 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
     --------------------------------------------------
     -- 2: Banish until End Phase
     --------------------------------------------------
-
     elseif sel==2 then
 
         local tc=re:GetHandler()
 
-        if tc:IsRelateToEffect(re)
+        if tc
+            and tc:IsRelateToEffect(re)
             and Duel.Remove(
                 tc,
                 POS_FACEUP,
@@ -825,7 +878,6 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
     --------------------------------------------------
     -- 3: Special Summon Halovian
     --------------------------------------------------
-
     elseif sel==3 then
 
         if Duel.GetLocationCount(
@@ -843,10 +895,14 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
 
         local g=Duel.SelectMatchingCard(
             tp,
-            aux.NecroValleyFilter(s.qspfilter),
+            aux.NecroValleyFilter(
+                s.qspfilter
+            ),
             tp,
-            LOCATION_HAND+LOCATION_DECK+
-            LOCATION_GRAVE+LOCATION_REMOVED,
+            LOCATION_HAND+
+            LOCATION_DECK+
+            LOCATION_GRAVE+
+            LOCATION_REMOVED,
             0,
             1,
             1,
@@ -871,14 +927,15 @@ function s.qop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------
--- Return banished card
+-- Return banished card at End Phase
 --------------------------------------------------
 
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
+
     local tc=e:GetLabelObject()
 
-    if tc and tc:IsLocation(LOCATION_REMOVED)
-        and tc:IsFaceup() then
+    if tc
+        and tc:IsLocation(LOCATION_REMOVED) then
 
         Duel.ReturnToField(tc)
     end
